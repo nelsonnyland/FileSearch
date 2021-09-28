@@ -11,6 +11,9 @@ public class FileSearch {
 
     private static SearchItem SearchItem;
     private static int ERROR_COUNT = 0;
+    private static boolean Found = false;
+
+    public enum SearchMode { SAFE, UNSAFE }
 
     public static void main(String[] args) throws IOException {
         getConsoleInput();
@@ -24,7 +27,7 @@ public class FileSearch {
         Scanner scanner = new Scanner(System.in);
         System.out.println("FileSearch 0.1");
         System.out.print("Safe search on (Enter Y or N)? ");
-        SearchItem.SearchMode = scanner.nextLine();
+        SearchItem.Input = scanner.nextLine();
         System.out.print("Enter search phrase: ");
         SearchItem.Query = scanner.nextLine();
         System.out.print("Enter directory address: ");
@@ -32,15 +35,15 @@ public class FileSearch {
     }
 
     private static void setSearchMode() {
-        if (SearchItem.SearchMode.toLowerCase().charAt(0) == 'y') {
-            SearchItem.Mode = 0; // safe search
+        if (SearchItem.Input.toLowerCase().trim().equals("y")) {
+            SearchItem.Mode = SearchMode.SAFE; // timed search
         } else {
-            SearchItem.Mode = 1; // un-timed search
+            SearchItem.Mode = SearchMode.UNSAFE; // un-timed search
         }
     }
 
     private static void checkSearchMode() {
-        if (SearchItem.Mode == 0) {
+        if (SearchItem.Mode == SearchMode.SAFE) {
             long startTimer = System.currentTimeMillis();
             SearchItem.StopTimer = startTimer + 60 * 1000; // 60 seconds * 1000 ms/sec
         }
@@ -58,11 +61,15 @@ public class FileSearch {
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                                 throws IOException {
                             if (System.currentTimeMillis() > SearchItem.StopTimer) {
+                                if (!Found) {
+                                    System.out.println("File not found.");
+                                }
                                 System.out.println("Safe search exiting process...");
                                 System.exit(0);
                             }
                             if (file.getFileName().toString().toLowerCase().contains(SearchItem.Query.toLowerCase())) {
                                 //SearchItem.FoundPaths.add(file.toFile());
+                                Found = true;
                                 System.out.println(file.toString());
                             }
                             return FileVisitResult.CONTINUE;
@@ -89,24 +96,23 @@ public class FileSearch {
             }
         }
     }
-}
 
-class SearchItem {
-    String Query;
-    String Directory;
-    String SearchMode;
-    int Mode;
-    long StopTimer;
-    Stack<File[]> Directories;
-    List<File> FoundPaths;
+    static class SearchItem {
+        String Query;
+        String Directory;
+        String Input;
+        SearchMode Mode;
+        long StopTimer;
+        Stack<File[]> Directories;
+        List<File> FoundPaths;
 
-    SearchItem() {
-        this.Query = "";
-        this.Directory = "";
-        this.SearchMode = "";
-        this.Mode = 0;
-        this.StopTimer = Integer.MAX_VALUE;
-        this.Directories = new Stack<File[]>();
-        this.FoundPaths = new ArrayList<File>();
+        SearchItem() {
+            this.Query = "";
+            this.Directory = "";
+            this.Input = "";
+            this.StopTimer = Integer.MAX_VALUE;
+            this.Directories = new Stack<File[]>();
+            this.FoundPaths = new ArrayList<File>();
+        }
     }
 }
